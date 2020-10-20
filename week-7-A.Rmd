@@ -24,6 +24,15 @@ Define the parameter H as the average number of hours of work reported by studen
 ## Scene 1
 
 **Prompt:** Create a tibble called `q_resamples` with three columns: `splits`, `id` and `boot`.  The first two columns are created automatically when you use `rsample::bootstraps()`. The last variable is a list column which includes a tibble with resampled data from `qscores`. There only column you need to keep from `qscores` is `hours`. Refer to Chapter 7 in the *The Primer* for hints.
+```{r}
+q_resamples <- qscores %>%
+  select(hours) %>%
+  bootstraps(times = 1000) %>%
+  mutate(boot = map(splits, ~ analysis(.)))
+
+
+```
+
 
 
 
@@ -31,12 +40,30 @@ Define the parameter H as the average number of hours of work reported by studen
 
 **Prompt:** Add two more columns to `q_resamples`: `hours_sampled` (the vector of hours pulled from each row of `boot`) and `mean_hours` (the mean of each `hours_sampled`). 
 
+```{r}
+q_resamples <- q_resamples %>%
+  mutate(hours_sampled = map(boot, ~ pull(., hours)),
+         mean_hours = map_dbl(hours_sampled, ~ mean(., na.rm = TRUE)))
+
+```
 
 
 
 ## Scene 3
 
 **Prompt:** Create a graphic of the posterior probability distribution for H. Interpret it.
+
+```{r}
+q_resamples %>%
+  
+ggplot(aes(x = mean_hours,
+           y = after_stat(count/sum(count)))) +
+  geom_histogram(binwidth = 0.05) +
+  geom_vline(xintercept = mean(q_resamples$mean_hours, na.rm = T), col = "pink") +
+  labs(x = "Mean Hours",
+       y = "Probability",
+       title = "Posterior Distribution for Mean Hours of Classes")
+```
 
 
 
